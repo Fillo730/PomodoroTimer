@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const db = require('./db');
@@ -16,7 +17,9 @@ app.get('/api/health', (req, res) => {
 app.use('/api/sessions', sessionsRouter);
 app.use('/api/stats', statsRouter);
 
+app.use(express.static(path.join(__dirname, '..', '..', 'frontend')));
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`Backend in ascolto su http://localhost:${PORT}`);
+  console.log(`App disponibile su http://localhost:${PORT}`);
 });
