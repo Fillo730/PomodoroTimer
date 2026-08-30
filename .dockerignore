@@ -1,0 +1,5 @@
+.git
+docs
+backend/node_modules
+backend/data
+*.md
