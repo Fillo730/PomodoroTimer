@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const db = require('./db');
+const sessionsRouter = require('./routes/sessions');
+const statsRouter = require('./routes/stats');
 
 const app = express();
 app.use(cors());
@@ -10,6 +12,9 @@ app.get('/api/health', (req, res) => {
   const { count } = db.prepare('SELECT COUNT(*) AS count FROM sessions').get();
   res.json({ status: 'ok', sessions: count });
 });
+
+app.use('/api/sessions', sessionsRouter);
+app.use('/api/stats', statsRouter);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
