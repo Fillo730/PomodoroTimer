@@ -1,4 +1,4 @@
-:root {
+[data-theme="light"] {
   --bg: #faf7f2;
   --surface: #ffffff;
   --text: #1f1b16;
@@ -12,17 +12,46 @@
   --long-break: #3d6fe0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #171310;
-    --surface: #221d18;
-    --text: #f3ede4;
-    --text-muted: #b3a89c;
-    --border: #382f27;
-    --accent: #f0765f;
-    --accent-soft: rgba(240, 118, 95, 0.2);
-    --accent-strong: #f7947f;
-  }
+[data-theme="dark"] {
+  --bg: #1a1714;
+  --surface: #24201c;
+  --text: #f5f0e8;
+  --text-muted: #a8a095;
+  --border: #3a352e;
+  --accent: #e0674f;
+  --accent-soft: rgba(224, 103, 79, 0.2);
+  --accent-strong: #f07b60;
+  --focus: #e0674f;
+  --short-break: #4fac82;
+  --long-break: #5f8af0;
+}
+
+[data-theme="blue"] {
+  --bg: #c9def9;
+  --surface: #ffffff;
+  --text: #16232f;
+  --text-muted: #4f6478;
+  --border: #aecbf0;
+  --accent: #2f6fed;
+  --accent-soft: rgba(47, 111, 237, 0.16);
+  --accent-strong: #1e54c4;
+  --focus: #2f6fed;
+  --short-break: #2a9d6f;
+  --long-break: #7a4fd8;
+}
+
+[data-theme="green"] {
+  --bg: #cdeede;
+  --surface: #ffffff;
+  --text: #123123;
+  --text-muted: #4d6e5f;
+  --border: #a9dbc3;
+  --accent: #1f9d5c;
+  --accent-soft: rgba(31, 157, 92, 0.16);
+  --accent-strong: #147a45;
+  --focus: #1f9d5c;
+  --short-break: #2f8fbb;
+  --long-break: #6a5fd8;
 }
 
 * {
@@ -56,9 +85,60 @@ body[data-phase='long_break'] {
   padding: 2rem 1rem 1rem;
 }
 
+.header-top {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .app-header h1 {
   margin: 0;
   font-size: 1.5rem;
+}
+
+.theme-switcher {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.theme-switcher::after {
+  content: '';
+  position: absolute;
+  right: 0.7rem;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--text-muted);
+  pointer-events: none;
+}
+
+#theme-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.4rem 1.9rem 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#theme-select:hover {
+  border-color: var(--accent);
+}
+
+#theme-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .tabs {

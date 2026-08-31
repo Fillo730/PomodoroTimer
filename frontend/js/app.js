@@ -4,6 +4,7 @@ import { PomodoroTimer, PHASES } from './timer.js';
 import { playChime } from './sound.js';
 import { requestNotificationPermission, notify, isNotificationSupported } from './notifications.js';
 import { refreshStats } from './stats.js';
+import { applyTheme, loadTheme } from './theme.js';
 
 const PHASE_LABELS = {
   [PHASES.FOCUS]: 'Focus',
@@ -43,6 +44,8 @@ const els = {
 
 const RING_CIRCUMFERENCE = 2 * Math.PI * 90;
 els.ringProgress.style.strokeDasharray = `${RING_CIRCUMFERENCE}`;
+
+const selectTheme = document.getElementById("theme-select");
 
 function formatTime(ms) {
   const totalSeconds = Math.ceil(ms / 1000);
@@ -141,6 +144,10 @@ function applySettingsToForm() {
   els.setApiBase.value = getApiBase();
 }
 
+selectTheme.addEventListener("change", (e) => {
+  applyTheme(e.target.value);
+})
+
 els.settingsForm.addEventListener('submit', (e) => {
   e.preventDefault();
   settings = {
@@ -199,6 +206,10 @@ async function loadRecentSubjects() {
     // backend non raggiungibile: il timer resta comunque utilizzabile offline
   }
 }
+
+const currentTheme = loadTheme();
+selectTheme.value = currentTheme;
+applyTheme(currentTheme);
 
 applySettingsToForm();
 renderTick({
