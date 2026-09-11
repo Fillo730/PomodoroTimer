@@ -5,6 +5,7 @@ import { playChime } from './sound.js';
 import { requestNotificationPermission, notify, isNotificationSupported } from './notifications.js';
 import { refreshStats } from './stats.js';
 import { applyTheme, loadTheme } from './theme.js';
+import { setupKeyboardShortcuts } from './keyboard-shortcuts.js';
 
 const PHASE_LABELS = {
   [PHASES.FOCUS]: 'Focus',
@@ -15,7 +16,9 @@ const PHASE_LABELS = {
 const PENDING_KEY = 'pomodoro:pendingSessions';
 
 let settings = loadSettings();
+
 const timer = new PomodoroTimer(settings);
+setupKeyboardShortcuts(timer);
 
 const els = {
   modeLabel: document.getElementById('mode-label'),
