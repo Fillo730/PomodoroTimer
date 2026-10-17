@@ -14,7 +14,49 @@ export class PomodoroTimer {
     this.tickHandle = null;
     this.onTick = null;
     this.onPhaseComplete = null;
+    this.onStateChange = null;
     this.running = false;
+  }
+
+  getState() {
+    return {
+      phase: this.phase,
+      cycleCount: this.cycleCount,
+      running: this.running,
+      endAt: this.running ? this.endAt : null,
+      remainingMs: this.remainingMs,
+    };
+  }
+
+  // Ripristina uno stato salvato con getState(). Se la fase era in corso ed è
+  // scaduta mentre la pagina era chiusa, viene completata con l'orario di fine
+  // originale, senza avviare automaticamente la fase successiva.
+  restoreState(state) {
+    if (!state || !Object.values(PHASES).includes(state.phase)) {
+      this._emitTick();
+      return;
+    }
+    this.phase = state.phase;
+    this.cycleCount = Number.isInteger(state.cycleCount) && state.cycleCount >= 0 ? state.cycleCount : 0;
+    const totalMs = this.durationForPhase(this.phase) * 60000;
+
+    if (state.running && Number.isFinite(state.endAt)) {
+      if (state.endAt > Date.now()) {
+        this.remainingMs = state.endAt - Date.now();
+        this.running = true;
+        this.endAt = state.endAt;
+        this.tickHandle = setInterval(() => this._tick(), 250);
+        this._emitTick();
+      } else {
+        this._completeCurrentPhase(true, { completedAt: state.endAt, restored: true });
+      }
+      return;
+    }
+
+    const remaining = Number(state.remainingMs);
+    this.remainingMs = Number.isFinite(remaining) && remaining > 0 ? Math.min(remaining, totalMs) : totalMs;
+    this._emitTick();
+    this._emitStateChange();
   }
 
   durationForPhase(phase) {
@@ -28,6 +70,7 @@ export class PomodoroTimer {
     if (!this.running) {
       this.remainingMs = this.durationForPhase(this.phase) * 60000;
       this._emitTick();
+      this._emitStateChange();
     }
   }
 
@@ -36,6 +79,7 @@ export class PomodoroTimer {
     this.running = true;
     this.endAt = Date.now() + this.remainingMs;
     this.tickHandle = setInterval(() => this._tick(), 250);
+    this._emitStateChange();
   }
 
   pause() {
@@ -44,6 +88,7 @@ export class PomodoroTimer {
     this.remainingMs = Math.max(0, this.endAt - Date.now());
     clearInterval(this.tickHandle);
     this._emitTick();
+    this._emitStateChange();
   }
 
   reset() {
@@ -51,6 +96,7 @@ export class PomodoroTimer {
     clearInterval(this.tickHandle);
     this.remainingMs = this.durationForPhase(this.phase) * 60000;
     this._emitTick();
+    this._emitStateChange();
   }
 
   skip() {
@@ -65,11 +111,11 @@ export class PomodoroTimer {
     if (this.remainingMs <= 0) {
       clearInterval(this.tickHandle);
       this.running = false;
-      this._completeCurrentPhase(true);
+      this._completeCurrentPhase(true, { completedAt: this.endAt });
     }
   }
 
-  _completeCurrentPhase(natural) {
+  _completeCurrentPhase(natural, { completedAt = Date.now(), restored = false } = {}) {
     const completedPhase = this.phase;
     const duration = this.durationForPhase(completedPhase);
 
@@ -78,15 +124,17 @@ export class PomodoroTimer {
     }
 
     if (this.onPhaseComplete) {
-      this.onPhaseComplete({ phase: completedPhase, durationMinutes: duration, natural });
+      this.onPhaseComplete({ phase: completedPhase, durationMinutes: duration, natural, completedAt, restored });
     }
 
     this._advancePhase(completedPhase);
     this.remainingMs = this.durationForPhase(this.phase) * 60000;
     this._emitTick();
 
-    if (natural && this.settings.autoStart) {
+    if (natural && !restored && this.settings.autoStart) {
       this.start();
+    } else {
+      this._emitStateChange();
     }
   }
 
@@ -97,6 +145,10 @@ export class PomodoroTimer {
     } else {
       this.phase = PHASES.FOCUS;
     }
+  }
+
+  _emitStateChange() {
+    if (this.onStateChange) this.onStateChange(this.getState());
   }
 
   _emitTick() {

@@ -6,6 +6,7 @@ import { requestNotificationPermission, notify, isNotificationSupported } from '
 import { refreshStats } from './stats.js';
 import { applyTheme, loadTheme } from './theme.js';
 import { setupKeyboardShortcuts } from './keyboard-shortcuts.js';
+import { loadTimerState, saveTimerState, loadSubject, saveSubject } from './timer-state.js';
 
 const PHASE_LABELS = {
   [PHASES.FOCUS]: 'Focus',
@@ -78,23 +79,29 @@ function renderTick({ phase, remainingMs, totalMs, cycleCount, running }) {
 
 timer.onTick = renderTick;
 
-timer.onPhaseComplete = async ({ phase, durationMinutes, natural }) => {
-  playChime(settings.volume);
-  notify(
-    phase === PHASES.FOCUS ? 'Sessione completata!' : 'Pausa terminata',
-    phase === PHASES.FOCUS
-      ? 'Ottimo lavoro, è ora di una pausa.'
-      : 'Pronto per la prossima sessione di focus?'
-  );
+timer.onStateChange = saveTimerState;
+
+timer.onPhaseComplete = async ({ phase, durationMinutes, natural, completedAt, restored }) => {
+  // Una fase scaduta mentre la pagina era chiusa viene solo registrata:
+  // suono e notifica arriverebbero in ritardo.
+  if (!restored) {
+    playChime(settings.volume);
+    notify(
+      phase === PHASES.FOCUS ? 'Sessione completata!' : 'Pausa terminata',
+      phase === PHASES.FOCUS
+        ? 'Ottimo lavoro, è ora di una pausa.'
+        : 'Pronto per la prossima sessione di focus?'
+    );
+  }
 
   if (!natural) return;
 
-  const now = new Date();
+  const end = new Date(completedAt);
   const session = {
     type: phase,
     durationMinutes,
-    completedAt: now.toISOString(),
-    date: localDateString(now),
+    completedAt: end.toISOString(),
+    date: localDateString(end),
   };
   if (phase === PHASES.FOCUS) {
     const subject = els.subjectInput.value.trim();
@@ -215,13 +222,9 @@ selectTheme.value = currentTheme;
 applyTheme(currentTheme);
 
 applySettingsToForm();
-renderTick({
-  phase: timer.phase,
-  remainingMs: timer.remainingMs,
-  totalMs: timer.durationForPhase(timer.phase) * 60000,
-  cycleCount: timer.cycleCount,
-  running: false,
-});
+els.subjectInput.value = loadSubject();
+els.subjectInput.addEventListener('input', () => saveSubject(els.subjectInput.value));
+timer.restoreState(loadTimerState());
 loadRecentSubjects();
 flushPendingSessions();
 
